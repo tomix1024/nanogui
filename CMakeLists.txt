@@ -22,10 +22,10 @@ add_custom_command(
 include_directories(${CMAKE_CURRENT_BINARY_DIR})
 
 
-set(GLFW_BUILD_EXAMPLES OFF)
-set(GLFW_BUILD_TESTS OFF)
-set(GLFW_BUILD_DOCS OFF)
-set(GLFW_INSTALL OFF)
+option(GLFW_BUILD_EXAMPLES " " OFF)
+option(GLFW_BUILD_TESTS " " OFF)
+option(GLFW_BUILD_DOCS " " OFF)
+option(GLFW_INSTALL " " OFF)
 
 add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/ext/glfw" "glfw")
 
