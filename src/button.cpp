@@ -72,8 +72,10 @@ bool Button::mouseButtonEvent(const Vector2i &p, int button, bool down, int modi
             if (mFlags & PopupButton) {
                 for (auto widget : parent()->children()) {
                     Button *b = dynamic_cast<Button *>(widget);
-                    if (b != this && b && b->buttonFlags() & PopupButton)
-                        b->mPushed = false;
+                    if(b != this && b && b->buttonFlags() & PopupButton && b->mPushed && b->mChangeCallback) {
+                      b->mPushed = false;
+                      b->changeCallback();
+                    }
                 }
             }
             if (mFlags & ToggleButton)
