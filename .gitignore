@@ -2,11 +2,16 @@
 *.exe
 *.lib
 *.cmake
+.DS_Store
 ext_build
 resources.*
 build
 CMakeCache.txt
 CMakeFiles
+.ninja_deps
+.ninja_log
+build.ninja
+rules.ninja
 Makefile
 bin2c
 example1

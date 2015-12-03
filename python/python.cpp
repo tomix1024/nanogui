@@ -1,3 +1,5 @@
+#ifdef NANOGUI_PYTHON
+
 #include <nanogui/nanogui.h>
 #include <nanogui/opengl.h>
 #include "python.h"
@@ -39,9 +41,9 @@ DECLARE_WIDGET(Int64Box);
 DECLARE_WIDGET(ColorPicker);
 
 /// Make pybind aware of the ref-counted wrapper type
-PYBIND_DECLARE_HOLDER_TYPE(T, ref<T>);
+PYBIND11_DECLARE_HOLDER_TYPE(T, ref<T>);
 
-PYBIND_PLUGIN(nanogui) {
+PYBIND11_PLUGIN(nanogui) {
     py::module m("nanogui", "NanoGUI plugin");
 
     m.def("init", &nanogui::init);
@@ -196,6 +198,7 @@ PYBIND_PLUGIN(nanogui) {
         .def("setTooltip", &Widget::setTooltip, D(Widget, setTooltip))
         .def("fontSize", &Widget::fontSize, D(Widget, fontSize))
         .def("setFontSize", &Widget::setFontSize, D(Widget, setFontSize))
+        .def("hasFontSize", &Widget::hasFontSize, D(Widget, hasFontSize))
         .def("cursor", &Widget::cursor, D(Widget, cursor))
         .def("setCursor", &Widget::setCursor, D(Widget, setCursor))
         .def("findWidget", &Widget::findWidget, D(Widget, findWidget))
@@ -233,8 +236,7 @@ PYBIND_PLUGIN(nanogui) {
         .def("performLayout", (void(Screen::*)(void)) &Screen::performLayout)
         .def("drawAll", &Screen::drawAll, D(Screen, drawAll))
         .def("drawContents", &Screen::drawContents, D(Screen, drawContents))
-        .def("resizeEvent", &Screen::resizeEvent, py::arg("width"), py::arg("height"),
-             D(Screen, resizeEvent))
+        .def("resizeEvent", &Screen::resizeEvent, py::arg("size"), D(Screen, resizeEvent))
         .def("dropEvent", &Screen::dropEvent, D(Screen, dropEvent))
         .def("mousePos", &Screen::mousePos, D(Screen, mousePos))
         .def("glfwWindow", &Screen::glfwWindow, D(Screen, glfwWindow),
@@ -376,7 +378,7 @@ PYBIND_PLUGIN(nanogui) {
         .def("setTextColor", &Button::setTextColor, D(Button, setTextColor))
         .def("icon", &Button::icon, D(Button, icon))
         .def("setIcon", &Button::setIcon, D(Button, setIcon))
-        .def("buttonFlags", &Button::buttonFlags, D(Button, buttonFlags))
+        .def("flags", &Button::flags, D(Button, flags))
         .def("setFlags", &Button::setFlags, D(Button, setFlags))
         .def("iconPosition", &Button::iconPosition, D(Button, iconPosition))
         .def("setIconPosition", &Button::setIconPosition, D(Button, setIconPosition))
@@ -472,11 +474,18 @@ PYBIND_PLUGIN(nanogui) {
         .def("callback", &ImagePanel::callback, D(ImagePanel, callback))
         .def("setCallback", &ImagePanel::setCallback, D(ImagePanel, setCallback));
 
-    py::class_<PyImageView, ref<PyImageView>>(m, "ImageView", widget, D(ImageView))
+    py::class_<PyImageView, ref<PyImageView>> imageview(m, "ImageView", widget, D(ImageView));
+    imageview
         .alias<ImageView>()
-        .def(py::init<Widget *, int>(), py::arg("parent"), py::arg("image") = 0, D(ImageView, ImageView))
+        .def(py::init<Widget *, int, ImageView::SizePolicy>(), py::arg("parent"), py::arg("image") = 0, py::arg("policy") = ImageView::SizePolicy::Fixed, D(ImageView, ImageView))
         .def("image", &ImageView::image, D(ImageView, image))
-        .def("setImage", &ImageView::setImage, D(ImageView, setImage));
+        .def("setImage", &ImageView::setImage, D(ImageView, setImage))
+        .def("policy", &ImageView::policy, D(ImageView, policy))
+        .def("setPolicy", &ImageView::setPolicy, D(ImageView, setPolicy));
+
+    py::enum_<ImageView::SizePolicy>(imageview, "SizePolicy")
+        .value("Fixed", ImageView::SizePolicy::Fixed)
+        .value("Expand", ImageView::SizePolicy::Expand);
 
     py::class_<PyComboBox, ref<PyComboBox>>(m, "ComboBox", widget, D(ComboBox))
         .alias<ComboBox>()
@@ -774,3 +783,5 @@ PYBIND_PLUGIN(nanogui) {
 
     return m.ptr();
 }
+
+#endif

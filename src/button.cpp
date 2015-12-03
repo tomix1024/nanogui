@@ -19,13 +19,14 @@ Button::Button(Widget *parent, const std::string &caption, int icon)
     : Widget(parent), mCaption(caption), mIcon(icon),
       mIconPosition(IconPosition::LeftCentered), mPushed(false),
       mFlags(NormalButton), mBackgroundColor(Color(0, 0)),
-      mTextColor(Color(0, 0)) {}
+      mTextColor(Color(0, 0)) { }
 
 Vector2i Button::preferredSize(NVGcontext *ctx) const {
-    nvgFontSize(ctx, mTheme->mButtonFontSize);
+    int fontSize = mFontSize == -1 ? mTheme->mButtonFontSize : mFontSize;
+    nvgFontSize(ctx, fontSize);
     nvgFontFace(ctx, "sans-bold");
     float tw = nvgTextBounds(ctx, 0,0, mCaption.c_str(), nullptr, nullptr);
-    float iw = 0.0f, ih = mFontSize == -1 ? mTheme->mButtonFontSize : mFontSize;
+    float iw = 0.0f, ih = fontSize;
 
     if (mIcon) {
         if (nvgIsFontIcon(mIcon)) {
@@ -41,9 +42,7 @@ Vector2i Button::preferredSize(NVGcontext *ctx) const {
             iw = w * ih / h;
         }
     }
-    return Vector2i(
-        (int)(tw + iw) + 20,
-        (mFontSize == -1 ? mTheme->mButtonFontSize : mFontSize) + 10);
+    return Vector2i((int)(tw + iw) + 20, fontSize + 10);
 }
 
 bool Button::mouseButtonEvent(const Vector2i &p, int button, bool down, int modifiers) {
@@ -59,17 +58,17 @@ bool Button::mouseButtonEvent(const Vector2i &p, int button, bool down, int modi
                 if (mButtonGroup.empty()) {
                     for (auto widget : parent()->children()) {
                         Button *b = dynamic_cast<Button *>(widget);
-                        if (b != this && b && (b->buttonFlags() & RadioButton) && b->mPushed) {
+                        if (b != this && b && (b->flags() & RadioButton) && b->mPushed) {
                             b->mPushed = false;
-                            if(b->mChangeCallback)
+                            if (b->mChangeCallback)
                                 b->mChangeCallback(false);
                         }
                     }
                 } else {
                     for (auto b : mButtonGroup) {
-                        if (b != this && (b->buttonFlags() & RadioButton) && b->mPushed) {
+                        if (b != this && (b->flags() & RadioButton) && b->mPushed) {
                             b->mPushed = false;
-                            if(b->mChangeCallback)
+                            if (b->mChangeCallback)
                                 b->mChangeCallback(false);
                         }
                     }
@@ -78,7 +77,7 @@ bool Button::mouseButtonEvent(const Vector2i &p, int button, bool down, int modi
             if (mFlags & PopupButton) {
                 for (auto widget : parent()->children()) {
                     Button *b = dynamic_cast<Button *>(widget);
-                    if (b != this && b && (b->buttonFlags() & PopupButton) && b->mPushed) {
+                    if (b != this && b && (b->flags() & PopupButton) && b->mPushed) {
                         b->mPushed = false;
                         if(b->mChangeCallback)
                             b->mChangeCallback(false);
@@ -151,7 +150,8 @@ void Button::draw(NVGcontext *ctx) {
     nvgStrokeColor(ctx, mTheme->mBorderDark);
     nvgStroke(ctx);
 
-    nvgFontSize(ctx, mFontSize == -1 ? mTheme->mButtonFontSize : mFontSize);
+    int fontSize = mFontSize == -1 ? mTheme->mButtonFontSize : mFontSize;
+    nvgFontSize(ctx, fontSize);
     nvgFontFace(ctx, "sans-bold");
     float tw = nvgTextBounds(ctx, 0,0, mCaption.c_str(), nullptr, nullptr);
 
@@ -165,7 +165,7 @@ void Button::draw(NVGcontext *ctx) {
     if (mIcon) {
         auto icon = utf8(mIcon);
 
-        float iw, ih = mFontSize == -1 ? mTheme->mButtonFontSize : mFontSize;
+        float iw, ih = fontSize;
         if (nvgIsFontIcon(mIcon)) {
             ih *= 1.5f;
             nvgFontSize(ctx, ih);
@@ -207,7 +207,7 @@ void Button::draw(NVGcontext *ctx) {
         }
     }
 
-    nvgFontSize(ctx, mFontSize == -1 ? mTheme->mButtonFontSize : mFontSize);
+    nvgFontSize(ctx, fontSize);
     nvgFontFace(ctx, "sans-bold");
     nvgTextAlign(ctx, NVG_ALIGN_LEFT | NVG_ALIGN_MIDDLE);
     nvgFillColor(ctx, mTheme->mTextColorShadow);

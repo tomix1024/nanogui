@@ -130,15 +130,28 @@ class TestApp(Screen):
         imgPanel = ImagePanel(vscroll)
         imgPanel.setImages(icons)
         popup.setFixedSize(Vector2i(245, 150))
-        Label(window, "Selected image", "sans-bold")
-        img = ImageView(window)
-        img.setFixedSize(Vector2i(40, 40))
+
+        img_window = Window(self, "Selected image")
+        img_window.setPosition(Vector2i(675, 15))
+        img_window.setLayout(GroupLayout());
+
+        img = ImageView(img_window)
+        img.setPolicy(ImageView.SizePolicy.Expand)
+        img.setFixedSize(Vector2i(300, 300))
         img.setImage(icons[0][0])
 
         def cb(i):
             print("Selected item %i" % i)
             img.setImage(icons[i][0])
         imgPanel.setCallback(cb)
+
+        def cb(s):
+            if s:
+                img.setPolicy(ImageView.SizePolicy.Expand)
+            else:
+                img.setPolicy(ImageView.SizePolicy.Fixed)
+        img_cb = CheckBox(img_window, "Expand", cb)
+        img_cb.setChecked(True)
 
         Label(window, "File dialog", "sans-bold")
         tools = Widget(window)

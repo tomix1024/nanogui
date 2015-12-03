@@ -19,6 +19,7 @@
 #include <iostream>
 #include <map>
 
+/* Allow enforcing the GL2 implementation of NanoVG */
 #define NANOVG_GL3_IMPLEMENTATION
 #include <nanovg_gl.h>
 
@@ -26,7 +27,7 @@ NAMESPACE_BEGIN(nanogui)
 
 std::map<GLFWwindow *, Screen *> __nanogui_screens;
 
-#if defined(WIN32)
+#if defined(_WIN32)
 static bool glewInitialized = false;
 #endif
 
@@ -74,7 +75,7 @@ Screen::Screen(const Vector2i &size, const std::string &caption,
 
     glfwMakeContextCurrent(mGLFWWindow);
 
-#if defined(WIN32)
+#if defined(_WIN32)
     if (!glewInitialized) {
         glewExperimental = GL_TRUE;
         glewInitialized = true;
@@ -173,15 +174,21 @@ Screen::Screen(const Vector2i &size, const std::string &caption,
         }
     );
 
-    glfwSetWindowSizeCallback(mGLFWWindow,
+    /* React to framebuffer size events -- includes window
+       size events and also catches things like dragging
+       a window from a Retina-capable screen to a normal
+       screen on Mac OS X */
+    glfwSetFramebufferSizeCallback(mGLFWWindow,
         [](GLFWwindow* w, int width, int height) {
-          auto it = __nanogui_screens.find(w);
-          if (it == __nanogui_screens.end())
-              return;
-          Screen* s = it->second;
-          if (!s->mProcessEvents)
-              return;
-          s->resizeCallbackEvent(width, height);
+            auto it = __nanogui_screens.find(w);
+            if (it == __nanogui_screens.end())
+                return;
+            Screen* s = it->second;
+
+            if (!s->mProcessEvents)
+                return;
+
+            s->resizeCallbackEvent(width, height);
         }
     );
 
@@ -238,7 +245,6 @@ void Screen::setVisible(bool visible) {
             glfwHideWindow(mGLFWWindow);
     }
 }
-
 
 void Screen::setCaption(const std::string &caption) {
     if (caption != mCaption) {
@@ -475,10 +481,19 @@ bool Screen::scrollCallbackEvent(double x, double y) {
     return false;
 }
 
-bool Screen::resizeCallbackEvent(int width, int height) {
+bool Screen::resizeCallbackEvent(int, int) {
+    Vector2i fbSize, size;
+    glfwGetFramebufferSize(mGLFWWindow, &fbSize[0], &fbSize[1]);
+    glfwGetWindowSize(mGLFWWindow, &size[0], &size[1]);
+
+    if (mFBSize == Vector2i(0, 0) || size == Vector2i(0, 0))
+        return false;
+
+    mFBSize = fbSize; mSize = size;
     mLastInteraction = glfwGetTime();
+
     try {
-        return resizeEvent(width, height);
+        return resizeEvent(mSize);
     } catch (const std::exception &e) {
         std::cerr << "Caught exception in event handler: " << e.what()
                   << std::endl;

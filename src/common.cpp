@@ -10,7 +10,7 @@
 */
 
 #include <nanogui/screen.h>
-#if defined(WIN32)
+#if defined(_WIN32)
 #include <windows.h>
 #endif
 #include <nanogui/opengl.h>
@@ -19,7 +19,7 @@
 #include <chrono>
 #include <iostream>
 
-#if !defined(WIN32)
+#if !defined(_WIN32)
     #include <locale.h>
     #include <signal.h>
     #include <sys/dir.h>
@@ -31,19 +31,19 @@ static bool __mainloop_active = false;
 extern std::map<GLFWwindow *, Screen *> __nanogui_screens;
 
 void init() {
-    #if !defined(WIN32)
+    #if !defined(_WIN32)
         /* Avoid locale-related number parsing issues */
         setlocale(LC_NUMERIC, "C");
     #endif
-
-    if (!glfwInit())
-        throw std::runtime_error("Could not initialize GLFW!");
 
     glfwSetErrorCallback(
         [](int error, const char *desc) {
             std::cerr << "GLFW error " << error << ": " << desc << std::endl;
         }
     );
+
+    if (!glfwInit())
+        throw std::runtime_error("Could not initialize GLFW!");
 
     glfwSetTime(0);
 }
@@ -126,7 +126,7 @@ std::array<char, 8> utf8(int c) {
     return seq;
 }
 
-inline int __nanogui_get_image(NVGcontext *ctx, const std::string &name, uint8_t *data, uint32_t size) {
+int __nanogui_get_image(NVGcontext *ctx, const std::string &name, uint8_t *data, uint32_t size) {
     static std::map<std::string, int> iconCache;
     auto it = iconCache.find(name);
     if (it != iconCache.end())
@@ -141,7 +141,7 @@ inline int __nanogui_get_image(NVGcontext *ctx, const std::string &name, uint8_t
 std::vector<std::pair<int, std::string>>
 loadImageDirectory(NVGcontext *ctx, const std::string &path) {
     std::vector<std::pair<int, std::string> > result;
-#if !defined(WIN32)
+#if !defined(_WIN32)
     DIR *dp = opendir(path.c_str());
     if (!dp)
         throw std::runtime_error("Could not open image directory!");
@@ -165,7 +165,7 @@ loadImageDirectory(NVGcontext *ctx, const std::string &path) {
             throw std::runtime_error("Could not open image data!");
         result.push_back(
             std::make_pair(img, fullName.substr(0, fullName.length() - 4)));
-#if !defined(WIN32)
+#if !defined(_WIN32)
     }
     closedir(dp);
 #else
@@ -178,22 +178,44 @@ loadImageDirectory(NVGcontext *ctx, const std::string &path) {
 #if !defined(__APPLE__)
 std::string file_dialog(const std::vector<std::pair<std::string, std::string>> &filetypes, bool save) {
 #define FILE_DIALOG_MAX_BUFFER 1024
-#if defined(WIN32)
+#if defined(_WIN32)
     OPENFILENAME ofn;
     ZeroMemory(&ofn, sizeof(OPENFILENAME));
     ofn.lStructSize = sizeof(OPENFILENAME);
-    char tmp = '\0';
-    ofn.lpstrFile = &tmp;
+    char tmp[FILE_DIALOG_MAX_BUFFER];
+    ofn.lpstrFile = tmp;
+    ZeroMemory(tmp, FILE_DIALOG_MAX_BUFFER);
     ofn.nMaxFile = FILE_DIALOG_MAX_BUFFER;
     ofn.nFilterIndex = 1;
 
-    std::vector<char> filter;
-    for (auto pair: filetypes) {
-        for (char c : pair.second)
-            filter.push_back(c);
+    std::string filter;
+
+    if (!save && filetypes.size() > 1) {
+        filter.append("Supported file types (");
+        for (size_t i = 0; i < filetypes.size(); ++i) {
+            filter.append("*.");
+            filter.append(filetypes[i].first);
+            if (i + 1 < filetypes.size())
+                filter.append(";");
+        }
+        filter.append(")");
         filter.push_back('\0');
-        for (char c : pair.first)
-            filter.push_back(c);
+        for (size_t i = 0; i < filetypes.size(); ++i) {
+            filter.append("*.");
+            filter.append(filetypes[i].first);
+            if (i + 1 < filetypes.size())
+                filter.append(";");
+        }
+        filter.push_back('\0');
+    }
+    for (auto pair: filetypes) {
+        filter.append(pair.second);
+        filter.append(" (*.");
+        filter.append(pair.first);
+        filter.append(")");
+        filter.push_back('\0');
+        filter.append("*.");
+        filter.append(pair.first);
         filter.push_back('\0');
     }
     filter.push_back('\0');
