@@ -66,8 +66,8 @@
 struct NVGcontext;
 struct NVGcolor;
 struct NVGglyphPosition;
-struct GLFWwindow;
-struct GLFWcursor;
+class GLFWwindow;
+class GLFWcursor;
 
 // Define command key for windows/mac/linux
 #ifdef __APPLE__
